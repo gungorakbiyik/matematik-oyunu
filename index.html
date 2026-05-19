@@ -511,6 +511,9 @@ function confirmClass(){if(!G.cls)return;initMap();show('s-map');scaleGame();}
 function scaleGame(){
   const scale=Math.min(window.innerWidth/620,window.innerHeight/502);
   document.getElementById('dng').style.zoom=scale;
+  const uiZoom=scale>1?scale:'';
+  const mb=document.querySelector('.menu-box');if(mb)mb.style.zoom=uiZoom;
+  const cw=document.querySelector('.cls-wrap');if(cw)cw.style.zoom=uiZoom;
 }
 window.addEventListener('resize',scaleGame);
 
