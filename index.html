@@ -32,7 +32,7 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 
 /* ── CLASS ── */
 #s-class{align-items:center;overflow-y:auto;background:radial-gradient(ellipse at 50% 40%,#0a1430,var(--bg) 70%);}
-.cls-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 12px;width:620px;}
+.cls-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 12px;width:min(620px,100%);}
 .cl-title{font-size:clamp(9px,3vw,13px);color:var(--or);text-align:center;margin-bottom:6px;letter-spacing:3px;text-shadow:0 0 16px var(--og);}
 .cl-sub{font-size:5px;color:#446;text-align:center;margin-bottom:20px;letter-spacing:1px;}
 .cc-grid{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-bottom:20px;}
@@ -101,7 +101,7 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 .dp-center{background:rgba(255,98,0,.05);border:1px solid rgba(255,98,0,.1);border-radius:50%;}
 
 /* ── OVERLAYS ── */
-.ov{display:none;position:absolute;inset:0;background:rgba(4,6,16,.88);z-index:50;align-items:center;justify-content:center;}
+.ov{display:none;position:fixed;inset:0;background:rgba(4,6,16,.88);z-index:100;align-items:center;justify-content:center;}
 .ov.on{display:flex;}
 .ovbox{position:relative;background:#0b1024;width:min(500px,90%);max-height:100%;overflow-y:auto;}
 .ov-hint-text{font-size:9px;color:var(--yw);background:rgba(255,200,0,.08);border-left:3px solid var(--yw);padding:8px 12px;margin:0 18px 10px;line-height:1.6;}
@@ -187,6 +187,7 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
   #dpad{display:grid;}
   #ebtn{display:flex;}
   .wasd{display:none;}
+  .map-area{align-items:flex-start;}
 }
 </style>
 </head>
@@ -270,82 +271,6 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
       <div id="ep"><div class="ep-key">E</div><div class="ep-txt" id="epTxt">GİR</div></div>
       <div class="wasd">WASD ile Yürü · E ile Gir</div>
 
-      <!-- Isınma overlay -->
-      <div class="ov" id="ov-warm">
-        <div class="ovbox" style="border:3px solid var(--te);box-shadow:0 0 28px rgba(0,223,200,.3);">
-          <button class="ovcl" onclick="closeOv('ov-warm')">✕ ÇIK</button>
-          <div class="ovtitle" style="color:var(--te);border-color:var(--te);">📖 ISINMA<span class="ov-prog" id="wProg">1 / 4</span></div>
-          <div class="ov-q" id="wQ">Soru yükleniyor...</div>
-          <div class="ov-hint-text" id="wHintText" style="display:none;"></div>
-          <div class="ov-ans" id="wAns"></div>
-          <div class="ov-hint-row" id="wHintRow" style="display:none;"><button class="hint-use-btn" id="wHintBtn" onclick="useHint('warm')">💡 İPUCU KULLAN</button></div>
-          <div class="ov-fb" id="wFb"></div>
-        </div>
-      </div>
-
-      <!-- Mağaza overlay -->
-      <div class="ov" id="ov-shop">
-        <div class="ovbox" style="border:3px solid var(--yw);box-shadow:0 0 28px rgba(255,200,0,.3);">
-          <button class="ovcl" onclick="closeOv('ov-shop')">✕ ÇIK</button>
-          <div class="ovtitle" style="color:var(--yw);border-color:var(--yw);">🧰 MAĞAZA</div>
-          <div class="shop-coin" id="shopCoin">● 15 Altın</div>
-          <div class="shop-items">
-            <div class="sh-item">
-              <div class="sh-icon">💉</div>
-              <div class="sh-info"><div class="sh-nm">+10 MAX HP</div><div class="sh-ds" id="shopHpDesc">Mevcut MAX HP: 100. Kalıcı.</div></div>
-              <button class="sh-buy" id="btnHp" onclick="buyHp()">● 20</button>
-            </div>
-            <div class="sh-item">
-              <div class="sh-icon">💡</div>
-              <div class="sh-info"><div class="sh-nm">İPUCU (1 ADET)</div><div class="sh-ds" id="shopHintDesc">Sahip olunan: 0 adet.</div></div>
-              <button class="sh-buy" id="btnHint" onclick="buyHint()">● 10</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Boss onay overlay -->
-      <div class="ov" id="ov-boss-confirm">
-        <div class="ovbox" style="border:3px solid var(--pk);box-shadow:0 0 28px var(--pg);width:min(360px,88%);">
-          <div class="boss-confirm-box">
-            <div class="boss-confirm-title">⚔️ SAVAŞA GİR?</div>
-            <div class="boss-confirm-sub">Boss savaşı başlayacak.<br>Hazır mısın?</div>
-            <div class="boss-confirm-btns">
-              <button class="cf-btn" onclick="confirmBoss()">EVET ▶</button>
-              <button class="cf-btn" style="background:#1a0828;color:var(--pk);border:2px solid var(--pk);" onclick="closeOv('ov-boss-confirm')">HAYIR ✕</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Boss savaşı overlay -->
-      <div class="ov" id="ov-boss">
-        <div class="ovbox" style="border:3px solid var(--pk);box-shadow:0 0 28px var(--pg);">
-          <button class="ovcl" onclick="closeOv('ov-boss')" id="bossCloseBtn">✕ ÇIK</button>
-          <div class="ovtitle" style="color:var(--pk);border-color:var(--pk);">💀 BOSS SAVAŞI — <span id="bossLvTxt">LV 1</span></div>
-          <div class="b-arena">
-            <div class="rn" style="width:180px;height:180px;border-color:rgba(255,98,0,.1);top:50%;left:30%;--d:12s;"></div>
-            <div class="rn" style="width:160px;height:160px;border-color:rgba(255,45,120,.1);top:50%;left:72%;--d:10s;"></div>
-            <div class="b-hpa">
-              <div class="bhp"><div class="bhp-nm" id="bPhpName">👤 KAHRAMAN</div><div class="bhp-track" id="bPhp"></div></div>
-              <div class="bhp"><div class="bhp-nm bs" id="bBhpName">👿 BOSS</div><div class="bhp-track" id="bBhp"></div></div>
-            </div>
-            <div class="fighters">
-              <div id="bPlayerSvg"></div>
-              <div class="vs">VS</div>
-              <div id="bossSvg"></div>
-            </div>
-          </div>
-          <div class="b-panel">
-            <div class="b-q" id="bQ">—</div>
-            <div class="ov-hint-text" id="bHintText" style="display:none;"></div>
-            <div class="b-ans" id="bAns"></div>
-            <div class="ov-hint-row" id="bHintRow" style="display:none;"><button class="hint-use-btn" id="bHintBtn" onclick="useHint('boss')">💡 İPUCU KULLAN</button></div>
-            <div class="ov-fb" id="bFb"></div>
-          </div>
-        </div>
-      </div>
-
     </div><!-- /dng -->
 
     <!-- D-pad (mobil) -->
@@ -362,6 +287,79 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
     </div>
 
     <button id="ebtn" onclick="tryEnter()"><span>E</span><span>GİR</span></button>
+  </div>
+</div>
+
+<!-- ═══ OVERLAYS ═══ -->
+<div class="ov" id="ov-warm">
+  <div class="ovbox" style="border:3px solid var(--te);box-shadow:0 0 28px rgba(0,223,200,.3);">
+    <button class="ovcl" onclick="closeOv('ov-warm')">✕ ÇIK</button>
+    <div class="ovtitle" style="color:var(--te);border-color:var(--te);">📖 ISINMA<span class="ov-prog" id="wProg">1 / 4</span></div>
+    <div class="ov-q" id="wQ">Soru yükleniyor...</div>
+    <div class="ov-hint-text" id="wHintText" style="display:none;"></div>
+    <div class="ov-ans" id="wAns"></div>
+    <div class="ov-hint-row" id="wHintRow" style="display:none;"><button class="hint-use-btn" id="wHintBtn" onclick="useHint('warm')">💡 İPUCU KULLAN</button></div>
+    <div class="ov-fb" id="wFb"></div>
+  </div>
+</div>
+
+<div class="ov" id="ov-shop">
+  <div class="ovbox" style="border:3px solid var(--yw);box-shadow:0 0 28px rgba(255,200,0,.3);">
+    <button class="ovcl" onclick="closeOv('ov-shop')">✕ ÇIK</button>
+    <div class="ovtitle" style="color:var(--yw);border-color:var(--yw);">🧰 MAĞAZA</div>
+    <div class="shop-coin" id="shopCoin">● 15 Altın</div>
+    <div class="shop-items">
+      <div class="sh-item">
+        <div class="sh-icon">💉</div>
+        <div class="sh-info"><div class="sh-nm">+10 MAX HP</div><div class="sh-ds" id="shopHpDesc">Mevcut MAX HP: 100. Kalıcı.</div></div>
+        <button class="sh-buy" id="btnHp" onclick="buyHp()">● 20</button>
+      </div>
+      <div class="sh-item">
+        <div class="sh-icon">💡</div>
+        <div class="sh-info"><div class="sh-nm">İPUCU (1 ADET)</div><div class="sh-ds" id="shopHintDesc">Sahip olunan: 0 adet.</div></div>
+        <button class="sh-buy" id="btnHint" onclick="buyHint()">● 10</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-boss-confirm">
+  <div class="ovbox" style="border:3px solid var(--pk);box-shadow:0 0 28px var(--pg);width:min(360px,88%);">
+    <div class="boss-confirm-box">
+      <div class="boss-confirm-title">⚔️ SAVAŞA GİR?</div>
+      <div class="boss-confirm-sub">Boss savaşı başlayacak.<br>Hazır mısın?</div>
+      <div class="boss-confirm-btns">
+        <button class="cf-btn" onclick="confirmBoss()">EVET ▶</button>
+        <button class="cf-btn" style="background:#1a0828;color:var(--pk);border:2px solid var(--pk);" onclick="closeOv('ov-boss-confirm')">HAYIR ✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="ov-boss">
+  <div class="ovbox" style="border:3px solid var(--pk);box-shadow:0 0 28px var(--pg);">
+    <button class="ovcl" onclick="closeOv('ov-boss')" id="bossCloseBtn">✕ ÇIK</button>
+    <div class="ovtitle" style="color:var(--pk);border-color:var(--pk);">💀 BOSS SAVAŞI — <span id="bossLvTxt">LV 1</span></div>
+    <div class="b-arena">
+      <div class="rn" style="width:180px;height:180px;border-color:rgba(255,98,0,.1);top:50%;left:30%;--d:12s;"></div>
+      <div class="rn" style="width:160px;height:160px;border-color:rgba(255,45,120,.1);top:50%;left:72%;--d:10s;"></div>
+      <div class="b-hpa">
+        <div class="bhp"><div class="bhp-nm" id="bPhpName">👤 KAHRAMAN</div><div class="bhp-track" id="bPhp"></div></div>
+        <div class="bhp"><div class="bhp-nm bs" id="bBhpName">👿 BOSS</div><div class="bhp-track" id="bBhp"></div></div>
+      </div>
+      <div class="fighters">
+        <div id="bPlayerSvg"></div>
+        <div class="vs">VS</div>
+        <div id="bossSvg"></div>
+      </div>
+    </div>
+    <div class="b-panel">
+      <div class="b-q" id="bQ">—</div>
+      <div class="ov-hint-text" id="bHintText" style="display:none;"></div>
+      <div class="b-ans" id="bAns"></div>
+      <div class="ov-hint-row" id="bHintRow" style="display:none;"><button class="hint-use-btn" id="bHintBtn" onclick="useHint('boss')">💡 İPUCU KULLAN</button></div>
+      <div class="ov-fb" id="bFb"></div>
+    </div>
   </div>
 </div>
 
@@ -513,9 +511,6 @@ function confirmClass(){if(!G.cls)return;initMap();show('s-map');scaleGame();}
 function scaleGame(){
   const scale=Math.min(window.innerWidth/620,window.innerHeight/502);
   document.getElementById('dng').style.zoom=scale;
-  const mb=document.querySelector('.menu-box');if(mb)mb.style.zoom=scale;
-  const cw=document.querySelector('.cls-wrap');if(cw)cw.style.zoom=scale;
-  const res=document.getElementById('result');if(res)res.style.zoom=scale;
 }
 window.addEventListener('resize',scaleGame);
 
