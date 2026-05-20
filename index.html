@@ -184,6 +184,8 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 @keyframes idle-b{0%,100%{transform:translate(-50%,-100%) translateY(0);}50%{transform:translate(-50%,-100%) translateY(-4px);}}
 @keyframes battle-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 
+.orient-hint{display:none;font-size:5px;color:#445;text-align:center;margin-top:10px;line-height:1.8;}
+@media(orientation:portrait)and(any-pointer:coarse){.orient-hint{display:block;}}
 @media(max-width:680px),(any-pointer:coarse){
   #dpad{display:grid;}
   #ebtn{display:flex;}
@@ -209,6 +211,7 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
       <thead><tr><th>#</th><th>İSİM</th><th>LV</th><th>ALTIN</th></tr></thead>
       <tbody id="lbBody"><tr><td colspan="4" class="lb-empty">Henüz kayıt yok</td></tr></tbody>
     </table>
+    <div class="orient-hint">📱 En iyi deneyim için yatay modda oynayınız</div>
   </div>
 </div>
 
