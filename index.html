@@ -167,8 +167,9 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 #ebtn span{font-size:4.5px;}
 
 /* Result */
-#result{display:none;position:fixed;inset:0;background:rgba(4,6,16,.96);z-index:200;align-items:center;justify-content:center;flex-direction:column;gap:18px;}
+#result{display:none;position:fixed;inset:0;background:rgba(4,6,16,.96);z-index:200;align-items:center;justify-content:center;}
 #result.on{display:flex;}
+#result-inner{display:flex;flex-direction:column;align-items:center;gap:18px;}
 .res-title{font-size:clamp(16px,5vw,26px);text-align:center;}
 .res-title.win{color:var(--yw);text-shadow:0 0 30px rgba(255,200,0,.6);}
 .res-title.lose{color:var(--rd);text-shadow:0 0 30px rgba(255,48,64,.5);}
@@ -365,9 +366,11 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 
 <!-- ═══ RESULT ═══ -->
 <div id="result">
-  <div class="res-title" id="resTitle"></div>
-  <div class="res-stats" id="resStats"></div>
-  <button class="res-btn" onclick="backToMenu()">ANA MENÜ ▶</button>
+  <div id="result-inner">
+    <div class="res-title" id="resTitle"></div>
+    <div class="res-stats" id="resStats"></div>
+    <button class="res-btn" onclick="backToMenu()">ANA MENÜ ▶</button>
+  </div>
 </div>
 
 <script>
@@ -514,6 +517,8 @@ function scaleGame(){
   const uiZoom=scale>1?scale:'';
   const mb=document.querySelector('.menu-box');if(mb)mb.style.zoom=uiZoom;
   const cw=document.querySelector('.cls-wrap');if(cw)cw.style.zoom=uiZoom;
+  document.querySelectorAll('.ovbox').forEach(el=>el.style.zoom=uiZoom);
+  const ri=document.getElementById('result-inner');if(ri)ri.style.zoom=uiZoom;
 }
 window.addEventListener('resize',scaleGame);
 
