@@ -308,12 +308,19 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 <div class="ov" id="ov-warm">
   <div class="ovbox" style="border:3px solid var(--te);box-shadow:0 0 28px rgba(0,223,200,.3);">
     <button class="ovcl" onclick="closeOv('ov-warm')">✕ ÇIK</button>
-    <div class="ovtitle" style="color:var(--te);border-color:var(--te);">📖 ISINMA<span class="ov-prog" id="wProg">1 / 4</span></div>
-    <div class="ov-q" id="wQ">Soru yükleniyor...</div>
-    <div class="ov-hint-text" id="wHintText" style="display:none;"></div>
-    <div class="ov-ans" id="wAns"></div>
-    <div class="ov-hint-row" id="wHintRow" style="display:none;"><button class="hint-use-btn" id="wHintBtn" onclick="useHint('warm')">💡 İPUCU KULLAN</button></div>
-    <div class="ov-fb" id="wFb"></div>
+    <div class="ovtitle" style="color:var(--te);border-color:var(--te);">📖 ISINMA<span class="ov-prog" id="wProg" style="display:none;">1 / 4</span></div>
+    <div id="wKonuPick">
+      <div style="font-size:5px;color:#888;text-align:center;margin-bottom:12px;letter-spacing:.5px;">Hangi konudan soru çözmek istersin?</div>
+      <div id="wKonuBtns" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:16px;"></div>
+      <div style="display:flex;justify-content:center;"><button class="cf-btn" onclick="startWarm()">BAŞLA ▶</button></div>
+    </div>
+    <div id="wQArea" style="display:none;">
+      <div class="ov-q" id="wQ"></div>
+      <div class="ov-hint-text" id="wHintText" style="display:none;"></div>
+      <div class="ov-ans" id="wAns"></div>
+      <div class="ov-hint-row" id="wHintRow" style="display:none;"><button class="hint-use-btn" id="wHintBtn" onclick="useHint('warm')">💡 İPUCU KULLAN</button></div>
+      <div class="ov-fb" id="wFb"></div>
+    </div>
   </div>
 </div>
 
@@ -332,11 +339,6 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
         <div class="sh-icon">💡</div>
         <div class="sh-info"><div class="sh-nm">İPUCU (1 ADET)</div><div class="sh-ds" id="shopHintDesc">Sahip olunan: 0 adet.</div></div>
         <button class="sh-buy" id="btnHint" onclick="buyHint()">● 10</button>
-      </div>
-      <div class="sh-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
-        <div class="sh-nm">📚 KONU FİLTRESİ</div>
-        <div class="sh-ds">Sadece seçili konudan soru gelsin. Ücretsiz.</div>
-        <div id="konuBtns" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;"></div>
       </div>
     </div>
   </div>
@@ -564,8 +566,8 @@ window.addEventListener('resize',scaleGame);
 
 /* ─── QUESTIONS HELPERS ─── */
 function comboMult(){return G.combo>=3?2:G.combo>=2?1.5:1;}
-function pickQuestions(count){
-  const pool=G.activeKonu?QUESTIONS.filter(q=>q.konu===G.activeKonu):QUESTIONS;
+function pickQuestions(count,ignoreKonu){
+  const pool=(G.activeKonu&&!ignoreKonu)?QUESTIONS.filter(q=>q.konu===G.activeKonu):QUESTIONS;
   let avail=pool.filter(q=>!G.usedQ.has(q.id));
   if(!avail.length){pool.forEach(q=>G.usedQ.delete(q.id));avail=pool.slice();}
   const picked=shuffleQ(avail).slice(0,count);
@@ -683,11 +685,32 @@ function openOv(id){document.getElementById(id).classList.add('on');cancelAnimat
 function closeOv(id){document.getElementById(id).classList.remove('on');G.raf=requestAnimationFrame(mapLoop);}
 
 /* ─── ISINMA ─── */
+const KONULAR=['Hepsi','Bölenler ve Katlar','Asal Sayılar','İstatistik','Doğal Sayılar','Ölçme Birimleri','Kesirler','Olasılık','Geometri','Denklemler'];
+function renderKonuBtns(){
+  document.getElementById('wKonuBtns').innerHTML=KONULAR.map(k=>{
+    const v=k==='Hepsi'?null:k;
+    const act=G.activeKonu===v;
+    return `<button class="sh-buy" style="font-size:4px;padding:6px 8px;${act?'background:var(--te);color:#000':''}" onclick="setKonu('${k}')">${k}</button>`;
+  }).join('');
+}
+function setKonu(k){
+  G.activeKonu=k==='Hepsi'?null:k;
+  renderKonuBtns();
+}
 function openWarm(){
   G.combo=0;
+  document.getElementById('wProg').style.display='none';
+  document.getElementById('wKonuPick').style.display='block';
+  document.getElementById('wQArea').style.display='none';
+  renderKonuBtns();
+  openOv('ov-warm');
+}
+function startWarm(){
+  document.getElementById('wKonuPick').style.display='none';
+  document.getElementById('wQArea').style.display='block';
+  document.getElementById('wProg').style.display='';
   G.qPool=pickQuestions(4);
   G.warmIdx=0;
-  openOv('ov-warm');
   showWarmQ();
 }
 function shuffleQ(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
@@ -747,17 +770,7 @@ function openShop(){
   document.getElementById('shopHintDesc').textContent='Sahip olunan: '+G.hints+' adet.';
   document.getElementById('btnHp').disabled=G.coins<20;
   document.getElementById('btnHint').disabled=G.coins<10;
-  const konular=['Hepsi','Bölenler ve Katlar','Asal Sayılar','İstatistik','Doğal Sayılar','Ölçme Birimleri','Kesirler','Olasılık','Geometri','Denklemler'];
-  document.getElementById('konuBtns').innerHTML=konular.map(k=>{
-    const v=k==='Hepsi'?null:k;
-    const act=G.activeKonu===v;
-    return `<button class="sh-buy" style="font-size:4px;padding:6px 8px;${act?'background:var(--te);color:#000':''}" onclick="setKonu('${k}')">${k}</button>`;
-  }).join('');
   openOv('ov-shop');
-}
-function setKonu(k){
-  G.activeKonu=k==='Hepsi'?null:k;
-  openShop();
 }
 function buyHp(){if(G.coins<20)return;G.coins-=20;G.maxHp+=10;G.hp=Math.min(G.hp+10,G.maxHp);updateHud();openShop();}
 function buyHint(){if(G.coins<10)return;G.coins-=10;G.hints++;G.score=Math.max(0,G.score-5);updateHud();openShop();}
@@ -786,7 +799,7 @@ function openBoss(){
   document.getElementById('bPlayerSvg').innerHTML=`<svg width="72" height="98" viewBox="0 0 26 36" style="image-rendering:pixelated;filter:drop-shadow(0 0 8px rgba(80,140,255,.5));animation:battle-bob 1.3s ease-in-out infinite;">${G.cls.svgBody}</svg>`;
   buildHpBar('bPhp',G.hp,G.maxHp,'var(--gn)');
   buildHpBar('bBhp',G.bossHp,G.bossMaxHp,'var(--pk)');
-  G.bossQueue=pickQuestions(QUESTIONS.length);
+  G.bossQueue=pickQuestions(QUESTIONS.length,true);
   G.bossDeferred=[];
   G.abilityCount=0;G.combo=0;
   document.getElementById('bossCloseBtn').style.display='block';
@@ -811,7 +824,7 @@ function updateAbilityUI(){
 }
 function showBossQ(){
   if(!G.bossQueue.length){
-    G.bossQueue=G.bossDeferred.length?G.bossDeferred.splice(0):pickQuestions(QUESTIONS.length);
+    G.bossQueue=G.bossDeferred.length?G.bossDeferred.splice(0):pickQuestions(QUESTIONS.length,true);
   }
   const q=G.bossQueue[0];
   G.answerStartTime=Date.now();
