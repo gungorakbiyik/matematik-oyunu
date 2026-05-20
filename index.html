@@ -806,6 +806,7 @@ function ansBoss(i){
     if(mageDouble){dmg*=2;fbExtra=' 💥×2';}
     else if(rangerFast){dmg=Math.floor(dmg*1.5);fbExtra=' ⚡+%50';}
     G.bossHp=Math.max(0,G.bossHp-dmg);
+    G.score+=15;
     document.getElementById('bFb').textContent='✓ DOĞRU! Boss: -'+dmg+' HP'+fbExtra;
     document.getElementById('bFb').style.color='var(--gn)';
     buildHpBar('bBhp',G.bossHp,G.bossMaxHp,'var(--pk)');
@@ -821,6 +822,7 @@ function ansBoss(i){
     document.getElementById('bFb').textContent=fbText;
     document.getElementById('bFb').style.color=knightShield?'var(--gn)':'var(--rd)';
     buildHpBar('bPhp',G.hp,G.maxHp,'var(--gn)');
+    updateHud();
     showDmg(knightShield?'0':'- '+playerDmg,knightShield?'var(--gn)':'var(--rd)');
     doFlash('rgba(255,48,64,.3)');
     if(!knightShield)doShake('ov-boss');
@@ -835,7 +837,7 @@ function ansBoss(i){
 }
 function buildHpBar(id,cur,max,col){
   const el=document.getElementById(id),pips=10;
-  const filled=Math.round((cur/max)*pips);
+  const filled=cur>0?Math.max(1,Math.ceil((cur/max)*pips)):0;
   el.innerHTML=Array.from({length:pips},(_,i)=>`<div class="bhp-pip" style="background:${i<filled?col:'#1a2038'};"></div>`).join('');
 }
 function bossWin(){
