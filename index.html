@@ -124,8 +124,10 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 .hint-use-btn:disabled{opacity:.4;cursor:not-allowed;}
 
 /* Boss confirm */
-.boss-confirm-box{display:flex;flex-direction:column;align-items:center;gap:20px;padding:28px 24px;}
+.boss-confirm-box{display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 24px;}
 .boss-confirm-title{font-size:14px;color:var(--pk);text-shadow:0 0 14px var(--pg);}
+.boss-confirm-name{font-size:8px;color:var(--pk);}
+.boss-confirm-dialogue{font-size:6px;color:#aaa;font-style:italic;text-align:center;line-height:1.8;padding:0 8px;}
 .boss-confirm-sub{font-size:6px;color:#667;text-align:center;line-height:2;}
 .boss-confirm-btns{display:flex;gap:14px;}
 
@@ -331,6 +333,11 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
         <div class="sh-info"><div class="sh-nm">İPUCU (1 ADET)</div><div class="sh-ds" id="shopHintDesc">Sahip olunan: 0 adet.</div></div>
         <button class="sh-buy" id="btnHint" onclick="buyHint()">● 10</button>
       </div>
+      <div class="sh-item" style="flex-direction:column;align-items:flex-start;gap:8px;">
+        <div class="sh-nm">📚 KONU FİLTRESİ</div>
+        <div class="sh-ds">Sadece seçili konudan soru gelsin. Ücretsiz.</div>
+        <div id="konuBtns" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:4px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -339,7 +346,9 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
   <div class="ovbox" style="border:3px solid var(--pk);box-shadow:0 0 28px var(--pg);width:min(360px,88%);">
     <div class="boss-confirm-box">
       <div class="boss-confirm-title">⚔️ SAVAŞA GİR?</div>
-      <div class="boss-confirm-sub">Boss savaşı başlayacak.<br>Hazır mısın?</div>
+      <div class="boss-confirm-name" id="bConfirmName"></div>
+      <div class="boss-confirm-dialogue" id="bConfirmDialogue"></div>
+      <div class="boss-confirm-sub">Hazır mısın?</div>
       <div class="boss-confirm-btns">
         <button class="cf-btn" onclick="confirmBoss()">EVET ▶</button>
         <button class="cf-btn" style="background:#1a0828;color:var(--pk);border:2px solid var(--pk);" onclick="closeOv('ov-boss-confirm')">HAYIR ✕</button>
@@ -397,6 +406,7 @@ async function loadQuestions() {
     const data = await res.json();
     QUESTIONS = data.map((q, i) => ({
       id: i,
+      konu: q.konu || '',
       q: q.soru,
       opts: q.secenekler,
       ans: q.dogru_cevap - 1,
@@ -439,11 +449,11 @@ const CLASSES = [
 
 /* ─── BOSS LEVELS ─── */
 const BOSS_LEVELS = [
-  {lv:1,name:'🪨 TAŞ GOLEM',maxHp:80,dmg:12,bg:'linear-gradient(180deg,#0e0c08,#1a1710 60%,#232015 100%)',
+  {lv:1,name:'🪨 TAŞ GOLEM',maxHp:80,dmg:12,dialogue:'GRRRR... Taşlarımı kıramazsın!',bg:'linear-gradient(180deg,#0e0c08,#1a1710 60%,#232015 100%)',
    svg:`<svg width="100" height="120" viewBox="0 0 36 42" style="image-rendering:pixelated;filter:drop-shadow(0 0 14px rgba(220,140,50,.5));animation:battle-bob 1.9s ease-in-out infinite;"><rect x="8" y="3" width="20" height="17" fill="#3e3828" rx="2"/><line x1="10" y1="7" x2="17" y2="5" stroke="#2e2918" stroke-width="1.2"/><line x1="19" y1="9" x2="26" y2="7" stroke="#2e2918" stroke-width="1.2"/><rect x="11" y="8" width="5" height="5" fill="#ff5500"><animate attributeName="opacity" values=".55;1;.55" dur=".9s" repeatCount="indefinite"/></rect><rect x="20" y="8" width="5" height="5" fill="#ff5500"><animate attributeName="opacity" values=".55;1;.55" dur=".9s" repeatCount="indefinite" begin=".18s"/></rect><rect x="12" y="9" width="3" height="3" fill="#ff9900"><animate attributeName="opacity" values=".4;1;.4" dur=".55s" repeatCount="indefinite"/></rect><rect x="21" y="9" width="3" height="3" fill="#ff9900"><animate attributeName="opacity" values=".4;1;.4" dur=".55s" repeatCount="indefinite" begin=".12s"/></rect><path d="M12 17 L14 15 L16 17 L18 15 L20 17 L22 15 L24 17" stroke="#ff5500" stroke-width="1.1" fill="none" opacity=".75"/><rect x="5" y="20" width="26" height="17" fill="#363020" rx="1"/><path d="M9 22 L11 28 L8 32" stroke="#ff5500" stroke-width="1.1" fill="none" opacity=".55"/><path d="M22 24 L25 30 L27 32" stroke="#ff5500" stroke-width="1" fill="none" opacity=".5"/><rect x="0" y="20" width="7" height="15" fill="#363020"/><rect x="29" y="20" width="7" height="15" fill="#363020"/><rect x="0" y="33" width="9" height="8" fill="#2e2918" rx="1"/><rect x="27" y="33" width="9" height="8" fill="#2e2918" rx="1"/><rect x="8" y="37" width="8" height="5" fill="#242010"/><rect x="20" y="37" width="8" height="5" fill="#242010"/></svg>`},
-  {lv:2,name:'❄️ BFRÖST',maxHp:110,dmg:16,bg:'linear-gradient(180deg,#020b14,#041628 60%,#062035 100%)',
+  {lv:2,name:'❄️ BFRÖST',maxHp:110,dmg:16,dialogue:'Donacaksın... ve cevapların da.',bg:'linear-gradient(180deg,#020b14,#041628 60%,#062035 100%)',
    svg:`<svg width="100" height="120" viewBox="0 0 36 42" style="image-rendering:pixelated;filter:drop-shadow(0 0 14px rgba(0,180,255,.6));animation:battle-bob 1.4s ease-in-out infinite;"><polygon points="18,0 10,13 26,13" fill="#003388"/><polygon points="18,0 12,11 24,11" fill="#0044bb"/><polygon points="18,0 16,5 20,5" fill="#88ddff"/><rect x="7" y="13" width="22" height="3" fill="#002277"/><rect x="11" y="16" width="14" height="11" fill="#99ccee"/><rect x="13" y="18" width="3" height="3" fill="#0088ff"/><rect x="20" y="18" width="3" height="3" fill="#0088ff"/><rect x="14" y="24" width="8" height="2" fill="#0055aa"/><rect x="9" y="27" width="18" height="14" fill="#001155"/><rect x="9" y="27" width="18" height="2" fill="#003388"/><rect x="3" y="27" width="7" height="11" fill="#002277"/><rect x="26" y="27" width="7" height="11" fill="#002277"/><rect x="0" y="10" width="2" height="28" fill="#1a3366"/><polygon points="1,10 -2,6 4,6" fill="#00aaff"/><circle cx="1" cy="8" r="3" fill="none" stroke="#00ccff" stroke-width=".7"><animate attributeName="r" values="2;5;2" dur="1.6s" repeatCount="indefinite"/><animate attributeName="opacity" values=".5;0;.5" dur="1.6s" repeatCount="indefinite"/></circle><circle cx="29" cy="22" r="1.5" fill="#55ddff"><animate attributeName="cy" values="22;16;22" dur="2s" repeatCount="indefinite"/></circle></svg>`},
-  {lv:3,name:'👿 İBLİS LORDU',maxHp:150,dmg:22,bg:'linear-gradient(180deg,#140204,#220308 60%,#300510 100%)',
+  {lv:3,name:'👿 İBLİS LORDU',maxHp:150,dmg:22,dialogue:'Hiçbir formül seni kurtaramaz... Hahaha!',bg:'linear-gradient(180deg,#140204,#220308 60%,#300510 100%)',
    svg:`<svg width="108" height="130" viewBox="0 0 36 42" style="image-rendering:pixelated;filter:drop-shadow(0 0 16px rgba(255,45,120,.65));animation:battle-bob 1.4s ease-in-out infinite;"><polygon points="0,10 8,26 14,19" fill="#3a0018" opacity=".9"/><polygon points="36,10 28,26 22,19" fill="#3a0018" opacity=".9"/><polygon points="10,0 12,11 7,11" fill="#bb1a00"/><polygon points="26,0 24,11 29,11" fill="#bb1a00"/><polygon points="10,0 11,4 9,4" fill="#ff3300"/><polygon points="26,0 25,4 27,4" fill="#ff3300"/><rect x="10" y="5" width="16" height="14" fill="#7a0000" rx="1"/><rect x="12" y="8" width="4" height="4" fill="#ff1a00"/><rect x="20" y="8" width="4" height="4" fill="#ff1a00"/><rect x="13" y="9" width="2" height="2" fill="#ff8800"><animate attributeName="opacity" values=".4;1;.4" dur=".65s" repeatCount="indefinite"/></rect><rect x="21" y="9" width="2" height="2" fill="#ff8800"><animate attributeName="opacity" values=".4;1;.4" dur=".65s" repeatCount="indefinite" begin=".12s"/></rect><rect x="12" y="15" width="12" height="3" fill="#2e0000"/><rect x="13" y="15" width="2" height="2" fill="#ddd"/><rect x="16" y="15" width="2" height="2" fill="#ddd"/><rect x="19" y="15" width="2" height="2" fill="#ddd"/><rect x="22" y="15" width="2" height="2" fill="#ddd"/><rect x="14" y="19" width="8" height="3" fill="#600000"/><rect x="8" y="22" width="20" height="13" fill="#1e000d"/><rect x="10" y="23" width="16" height="11" fill="#2c0016"/><polygon points="18,23 15,29 21,29" fill="#ff2d78" opacity=".7"/><polygon points="8,22 5,18 10,22" fill="#aa1a00"/><polygon points="28,22 31,18 26,22" fill="#aa1a00"/><rect x="3" y="23" width="6" height="9" fill="#7a0000"/><rect x="27" y="23" width="6" height="9" fill="#7a0000"/><rect x="3" y="32" width="2" height="5" fill="#aa1a00"/><rect x="5" y="32" width="2" height="5" fill="#aa1a00"/><rect x="29" y="32" width="2" height="5" fill="#aa1a00"/><rect x="27" y="32" width="2" height="5" fill="#aa1a00"/><rect x="10" y="35" width="6" height="6" fill="#1e000d"/><rect x="20" y="35" width="6" height="6" fill="#1e000d"/><circle cx="18" cy="21" r="18" fill="none" stroke="#ff2d78" stroke-width=".5" opacity=".25"><animate attributeName="r" values="16;22;16" dur="2.2s" repeatCount="indefinite"/><animate attributeName="opacity" values=".1;.4;.1" dur="2.2s" repeatCount="indefinite"/></circle></svg>`},
 ];
 
@@ -482,6 +492,7 @@ const G={
   coins:15,hp:100,maxHp:100,hints:0,score:0,
   bossHp:0,bossMaxHp:0,bossDmg:0,
   abilityCount:0,answerStartTime:0,
+  combo:0,activeKonu:null,
   qPool:[],warmIdx:0,
   bossQueue:[],bossDeferred:[],
   nearLoc:null,answerLocked:false,
@@ -552,10 +563,12 @@ function scaleGame(){
 window.addEventListener('resize',scaleGame);
 
 /* ─── QUESTIONS HELPERS ─── */
+function comboMult(){return G.combo>=3?2:G.combo>=2?1.5:1;}
 function pickQuestions(count){
-  let available=QUESTIONS.filter(q=>!G.usedQ.has(q.id));
-  if(available.length<count){G.usedQ.clear();available=QUESTIONS.slice();}
-  const picked=shuffleQ(available).slice(0,count);
+  const pool=G.activeKonu?QUESTIONS.filter(q=>q.konu===G.activeKonu):QUESTIONS;
+  let avail=pool.filter(q=>!G.usedQ.has(q.id));
+  if(!avail.length){pool.forEach(q=>G.usedQ.delete(q.id));avail=pool.slice();}
+  const picked=shuffleQ(avail).slice(0,count);
   picked.forEach(q=>G.usedQ.add(q.id));
   return picked;
 }
@@ -579,9 +592,8 @@ function useHint(mode){
 /* ─── MAP INIT ─── */
 function initMap(){
   G.hp=G.maxHp=100+G.cls.stats.hp*5;
-  G.coins=15;G.hints=0;G.score=0;G.level=1;
+  G.coins=15;G.hints=0;G.score=0;G.level=1;G.combo=0;G.activeKonu=null;
   G.pos={x:310,y:230};
-  G.usedQ=new Set();
   updateHud();
   document.getElementById('char').innerHTML=`<svg width="34" height="46" viewBox="0 0 26 36" style="image-rendering:pixelated;">${G.cls.svgBody}</svg>`;
   document.getElementById('hudName').textContent=G.name;
@@ -672,6 +684,7 @@ function closeOv(id){document.getElementById(id).classList.remove('on');G.raf=re
 
 /* ─── ISINMA ─── */
 function openWarm(){
+  G.combo=0;
   G.qPool=pickQuestions(4);
   G.warmIdx=0;
   openOv('ov-warm');
@@ -704,14 +717,17 @@ function ansWarm(i){
   btns.forEach(b=>b.disabled=true);
   if(i===q.ans){
     btns[i].classList.add('ok');
-    G.coins+=5;G.score+=10;
-    document.getElementById('wFb').textContent='✓ DOĞRU! +5 altın';
+    const mult=comboMult();
+    G.coins+=5;G.score+=Math.round(10*mult);G.combo++;
+    const comboTxt=mult>1?' 🔥×'+mult:'';
+    document.getElementById('wFb').textContent='✓ DOĞRU! +5 altın'+comboTxt;
     document.getElementById('wFb').style.color='var(--gn)';
     doFlash('rgba(0,200,83,.25)');
     updateHud();
   } else {
     btns[i].classList.add('bad');
     btns[q.ans].classList.add('ok');
+    G.combo=0;
     document.getElementById('wFb').textContent='✗ YANLIŞ!';
     document.getElementById('wFb').style.color='var(--rd)';
     G.hp=Math.max(0,G.hp-10);updateHud();
@@ -731,13 +747,28 @@ function openShop(){
   document.getElementById('shopHintDesc').textContent='Sahip olunan: '+G.hints+' adet.';
   document.getElementById('btnHp').disabled=G.coins<20;
   document.getElementById('btnHint').disabled=G.coins<10;
+  const konular=['Hepsi','Bölenler ve Katlar','Asal Sayılar','İstatistik','Doğal Sayılar','Ölçme Birimleri','Kesirler','Olasılık','Geometri','Denklemler'];
+  document.getElementById('konuBtns').innerHTML=konular.map(k=>{
+    const v=k==='Hepsi'?null:k;
+    const act=G.activeKonu===v;
+    return `<button class="sh-buy" style="font-size:4px;padding:6px 8px;${act?'background:var(--te);color:#000':''}" onclick="setKonu('${k}')">${k}</button>`;
+  }).join('');
   openOv('ov-shop');
+}
+function setKonu(k){
+  G.activeKonu=k==='Hepsi'?null:k;
+  openShop();
 }
 function buyHp(){if(G.coins<20)return;G.coins-=20;G.maxHp+=10;G.hp=Math.min(G.hp+10,G.maxHp);updateHud();openShop();}
 function buyHint(){if(G.coins<10)return;G.coins-=10;G.hints++;G.score=Math.max(0,G.score-5);updateHud();openShop();}
 
 /* ─── BOSS DOOR ─── */
-function openBossDoor(){openOv('ov-boss-confirm');}
+function openBossDoor(){
+  const boss=BOSS_LEVELS[Math.min(G.level-1,BOSS_LEVELS.length-1)];
+  document.getElementById('bConfirmName').textContent=boss.name;
+  document.getElementById('bConfirmDialogue').textContent='"'+boss.dialogue+'"';
+  openOv('ov-boss-confirm');
+}
 function confirmBoss(){
   document.getElementById('ov-boss-confirm').classList.remove('on');
   openBoss();
@@ -757,7 +788,7 @@ function openBoss(){
   buildHpBar('bBhp',G.bossHp,G.bossMaxHp,'var(--pk)');
   G.bossQueue=pickQuestions(QUESTIONS.length);
   G.bossDeferred=[];
-  G.abilityCount=0;
+  G.abilityCount=0;G.combo=0;
   document.getElementById('bossCloseBtn').style.display='block';
   openOv('ov-boss');
   showBossQ();
@@ -813,12 +844,14 @@ function ansBoss(i){
   btns.forEach(b=>b.disabled=true);
   if(i===q.ans){
     btns[i].classList.add('ok');
+    const mult=comboMult();
     let dmg=G.cls.stats.atk*2+10;
     let fbExtra='';
     if(mageDouble){dmg*=2;fbExtra=' 💥×2';}
     else if(rangerFast){dmg=Math.floor(dmg*1.5);fbExtra=' ⚡+%50';}
+    if(mult>1)fbExtra+=' 🔥×'+mult;
     G.bossHp=Math.max(0,G.bossHp-dmg);
-    G.score+=15;
+    G.score+=Math.round(15*mult);G.combo++;
     document.getElementById('bFb').textContent='✓ DOĞRU! Boss: -'+dmg+' HP'+fbExtra;
     document.getElementById('bFb').style.color='var(--gn)';
     buildHpBar('bBhp',G.bossHp,G.bossMaxHp,'var(--pk)');
@@ -828,6 +861,7 @@ function ansBoss(i){
   } else {
     btns[i].classList.add('bad');
     btns[q.ans].classList.add('ok');
+    G.combo=0;
     const playerDmg=knightShield?0:G.bossDmg;
     G.hp=Math.max(0,G.hp-playerDmg);
     const fbText=knightShield?'✗ YANLIŞ! 🛡️ DEMİR KALE — 0 hasar!':'✗ YANLIŞ! Sen: -'+playerDmg+' HP';
