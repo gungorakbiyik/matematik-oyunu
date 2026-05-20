@@ -162,6 +162,11 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 .b-btn.bad{border-color:var(--rd);background:rgba(255,48,64,.15);color:var(--rd);animation:shake .3s ease-out;}
 .b-key{background:var(--or);color:#000;font-size:7px;width:19px;height:19px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
+/* Ability indicator */
+#bAbility{min-height:16px;font-size:5px;text-align:center;padding:6px 16px 2px;letter-spacing:1px;}
+#ability-timer{height:3px;background:var(--te);margin:0 16px 4px;animation:timer-shrink 5s linear forwards;}
+@keyframes timer-shrink{from{width:100%;}to{width:0%;}}
+
 /* Mobile E button */
 #ebtn{display:none;position:absolute;bottom:28px;right:18px;width:56px;height:56px;border-radius:50%;background:rgba(255,200,0,.15);border:2px solid var(--yw);color:var(--yw);font-family:inherit;font-size:9px;cursor:pointer;z-index:20;align-items:center;justify-content:center;flex-direction:column;gap:2px;}
 #ebtn span{font-size:4.5px;}
@@ -358,6 +363,7 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
       </div>
     </div>
     <div class="b-panel">
+      <div id="bAbility"></div>
       <div class="b-q" id="bQ">—</div>
       <div class="ov-hint-text" id="bHintText" style="display:none;"></div>
       <div class="b-ans" id="bAns"></div>
@@ -440,17 +446,23 @@ const BOSS_LEVELS = [
 
 const LABELS = ['A','B','C','D'];
 
-/* ─── SESSION LEADERBOARD ─── */
-const SESSION_BOARD = [];
+/* ─── LEADERBOARD (localStorage) ─── */
+const STORAGE_KEY='canbossrpg_leaderboard';
 
 function saveScore(e){
-  SESSION_BOARD.push(e);
-  SESSION_BOARD.sort((a,b)=>b.lv-a.lv||b.coins-a.coins);
+  let board=[];
+  try{board=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch(_){}
+  board.push(e);
+  board.sort((a,b)=>b.score-a.score);
+  if(board.length>10)board.length=10;
+  try{localStorage.setItem(STORAGE_KEY,JSON.stringify(board));}catch(_){}
 }
 function lbRender(){
+  let board=[];
+  try{board=JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]');}catch(_){}
   const tb=document.getElementById('lbBody');
-  if(!SESSION_BOARD.length){tb.innerHTML='<tr><td colspan="4" class="lb-empty">Henüz kayıt yok</td></tr>';return;}
-  tb.innerHTML=SESSION_BOARD.map((e,i)=>`<tr class="${i===0?'lb-1':''}"><td>${i+1}</td><td>${e.name}</td><td>${e.lv}</td><td style="color:var(--yw)">● ${e.coins}</td></tr>`).join('');
+  if(!board.length){tb.innerHTML='<tr><td colspan="4" class="lb-empty">Henüz kayıt yok</td></tr>';return;}
+  tb.innerHTML=board.map((e,i)=>`<tr class="${i===0?'lb-1':''}"><td>${i+1}</td><td>${e.name}</td><td>${e.lv}</td><td style="color:var(--yw)">● ${e.score}</td></tr>`).join('');
 }
 
 /* ─── STATE ─── */
@@ -458,6 +470,7 @@ const G={
   name:'',cls:null,level:1,
   coins:15,hp:100,maxHp:100,hints:0,score:0,
   bossHp:0,bossMaxHp:0,bossDmg:0,
+  abilityCount:0,answerStartTime:0,
   qPool:[],warmIdx:0,
   bossQueue:[],bossDeferred:[],
   nearLoc:null,answerLocked:false,
@@ -555,7 +568,7 @@ function useHint(mode){
 /* ─── MAP INIT ─── */
 function initMap(){
   G.hp=G.maxHp=100+G.cls.stats.hp*5;
-  G.coins=10;G.hints=0;G.score=0;G.level=1;
+  G.coins=15;G.hints=0;G.score=0;G.level=1;
   G.pos={x:310,y:230};
   G.usedQ=new Set();
   updateHud();
@@ -653,7 +666,7 @@ function openWarm(){
   openOv('ov-warm');
   showWarmQ();
 }
-function shuffleQ(arr){return [...arr].sort(()=>Math.random()-.5);}
+function shuffleQ(arr){const a=[...arr];for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
 function showWarmQ(){
   const q=G.qPool[G.warmIdx];
   document.getElementById('wProg').textContent=(G.warmIdx+1)+' / '+G.qPool.length;
@@ -690,6 +703,7 @@ function ansWarm(i){
     btns[q.ans].classList.add('ok');
     document.getElementById('wFb').textContent='✗ YANLIŞ!';
     document.getElementById('wFb').style.color='var(--rd)';
+    G.hp=Math.max(0,G.hp-10);updateHud();
     doFlash('rgba(255,48,64,.3)');doShake('ov-warm');
   }
   setTimeout(()=>{
@@ -709,7 +723,7 @@ function openShop(){
   openOv('ov-shop');
 }
 function buyHp(){if(G.coins<20)return;G.coins-=20;G.maxHp+=10;G.hp=Math.min(G.hp+10,G.maxHp);updateHud();openShop();}
-function buyHint(){if(G.coins<10)return;G.coins-=10;G.hints++;G.score-=5;updateHud();openShop();}
+function buyHint(){if(G.coins<10)return;G.coins-=10;G.hints++;G.score=Math.max(0,G.score-5);updateHud();openShop();}
 
 /* ─── BOSS DOOR ─── */
 function openBossDoor(){openOv('ov-boss-confirm');}
@@ -731,19 +745,38 @@ function openBoss(){
   buildHpBar('bBhp',G.bossHp,G.bossMaxHp,'var(--pk)');
   G.bossQueue=pickQuestions(QUESTIONS.length);
   G.bossDeferred=[];
+  G.abilityCount=0;
   document.getElementById('bossCloseBtn').style.display='block';
   openOv('ov-boss');
   showBossQ();
+}
+function updateAbilityUI(){
+  const ab=document.getElementById('bAbility');
+  const cls=G.cls.id;
+  const cnt=G.abilityCount;
+  if(cls==='knight'){
+    const ready=cnt%5===4;
+    ab.innerHTML=ready?'<span style="color:var(--gn)">🛡️ DEMİR KALE HAZIR — Bu tur 0 hasar</span>':'';
+  } else if(cls==='mage'){
+    const ready=cnt%4===3;
+    ab.innerHTML=ready?'<span style="color:#cc88ff">💥 BÜYÜLÜ ATILIŞ HAZIR — 2× hasar</span>':'';
+  } else if(cls==='ranger'){
+    ab.innerHTML='<span style="color:var(--te)">⚡ 5 sn içinde cevapla: +%50 hasar</span><div id="ability-timer"></div>';
+    const timer=document.getElementById('ability-timer');
+    if(timer){timer.style.animation='none';void timer.offsetWidth;timer.style.animation='timer-shrink 5s linear forwards';}
+  }
 }
 function showBossQ(){
   if(!G.bossQueue.length){
     G.bossQueue=G.bossDeferred.length?G.bossDeferred.splice(0):pickQuestions(QUESTIONS.length);
   }
   const q=G.bossQueue[0];
+  G.answerStartTime=Date.now();
   document.getElementById('bQ').textContent=q.q;
   document.getElementById('bFb').textContent='';
   const bht=document.getElementById('bHintText');bht.style.display='none';bht.textContent='';
   G.answerLocked=false;
+  updateAbilityUI();
   if(q.hint){
     document.getElementById('bHintRow').style.display='block';
     const btn=document.getElementById('bHintBtn');
@@ -759,13 +792,21 @@ function ansBoss(i){
   if(G.answerLocked)return;
   G.answerLocked=true;
   const q=G.bossQueue[0];
+  const cnt=G.abilityCount;
+  const cls=G.cls.id;
+  const knightShield=cls==='knight'&&cnt%5===4;
+  const mageDouble=cls==='mage'&&cnt%4===3;
+  const rangerFast=cls==='ranger'&&(Date.now()-G.answerStartTime)<=5000;
   const btns=document.querySelectorAll('#bAns .b-btn');
   btns.forEach(b=>b.disabled=true);
   if(i===q.ans){
     btns[i].classList.add('ok');
-    const dmg=G.cls.stats.atk*2+10;
+    let dmg=G.cls.stats.atk*2+10;
+    let fbExtra='';
+    if(mageDouble){dmg*=2;fbExtra=' 💥×2';}
+    else if(rangerFast){dmg=Math.floor(dmg*1.5);fbExtra=' ⚡+%50';}
     G.bossHp=Math.max(0,G.bossHp-dmg);
-    document.getElementById('bFb').textContent='✓ DOĞRU! Boss: -'+dmg+' HP';
+    document.getElementById('bFb').textContent='✓ DOĞRU! Boss: -'+dmg+' HP'+fbExtra;
     document.getElementById('bFb').style.color='var(--gn)';
     buildHpBar('bBhp',G.bossHp,G.bossMaxHp,'var(--pk)');
     showDmg('-'+dmg,'var(--or)');
@@ -774,14 +815,18 @@ function ansBoss(i){
   } else {
     btns[i].classList.add('bad');
     btns[q.ans].classList.add('ok');
-    const dmg=G.bossDmg;G.hp=Math.max(0,G.hp-dmg);
-    document.getElementById('bFb').textContent='✗ YANLIŞ! Sen: -'+dmg+' HP';
-    document.getElementById('bFb').style.color='var(--rd)';
+    const playerDmg=knightShield?0:G.bossDmg;
+    G.hp=Math.max(0,G.hp-playerDmg);
+    const fbText=knightShield?'✗ YANLIŞ! 🛡️ DEMİR KALE — 0 hasar!':'✗ YANLIŞ! Sen: -'+playerDmg+' HP';
+    document.getElementById('bFb').textContent=fbText;
+    document.getElementById('bFb').style.color=knightShield?'var(--gn)':'var(--rd)';
     buildHpBar('bPhp',G.hp,G.maxHp,'var(--gn)');
-    showDmg('-'+dmg,'var(--rd)');
-    doFlash('rgba(255,48,64,.3)');doShake('ov-boss');
+    showDmg(knightShield?'0':'- '+playerDmg,knightShield?'var(--gn)':'var(--rd)');
+    doFlash('rgba(255,48,64,.3)');
+    if(!knightShield)doShake('ov-boss');
     G.bossDeferred.push(G.bossQueue.shift());
   }
+  G.abilityCount++;
   setTimeout(()=>{
     if(G.bossHp<=0){bossWin();return;}
     if(G.hp<=0){bossLose();return;}
@@ -812,7 +857,7 @@ function bossLose(){document.getElementById('ov-boss').classList.remove('on');en
 /* ─── END ─── */
 function endGame(win){
   cancelAnimationFrame(G.raf);
-  saveScore({name:G.name,cls:G.cls.name,lv:G.level,coins:G.coins});
+  saveScore({name:G.name,cls:G.cls.name,lv:G.level,score:G.score,date:new Date().toLocaleDateString('tr-TR')});
   document.getElementById('resTitle').textContent=win?'🏆 KAZANDIN!':'💀 KAYBETTİN';
   document.getElementById('resTitle').className='res-title '+(win?'win':'lose');
   document.getElementById('resStats').innerHTML=`İsim: <b>${G.name}</b><br>Sınıf: <b>${G.cls.name}</b><br>Seviye: <b>${G.level}</b><br>Altın: <b>● ${G.coins}</b>`;
