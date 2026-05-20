@@ -217,6 +217,9 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
       <tbody id="lbBody"><tr><td colspan="4" class="lb-empty">Henüz kayıt yok</td></tr></tbody>
     </table>
     <div class="orient-hint">📱 En iyi deneyim için yatay modda oynayınız</div>
+    <div style="text-align:center;margin-top:8px;">
+      <button onclick="resetLeaderboard()" style="background:none;border:none;color:#223;font-family:inherit;font-size:5px;cursor:pointer;letter-spacing:1px;">↺ tabloyu sıfırla</button>
+    </div>
   </div>
 </div>
 
@@ -463,6 +466,14 @@ function lbRender(){
   const tb=document.getElementById('lbBody');
   if(!board.length){tb.innerHTML='<tr><td colspan="4" class="lb-empty">Henüz kayıt yok</td></tr>';return;}
   tb.innerHTML=board.map((e,i)=>`<tr class="${i===0?'lb-1':''}"><td>${i+1}</td><td>${e.name}</td><td>${e.lv}</td><td style="color:var(--yw)">● ${e.score}</td></tr>`).join('');
+}
+
+function resetLeaderboard(){
+  const pw=prompt('Şifre:');
+  if(pw===null)return;
+  if(pw!=='HvFB'){alert('Yanlış şifre.');return;}
+  try{localStorage.removeItem(STORAGE_KEY);}catch(_){}
+  lbRender();
 }
 
 /* ─── STATE ─── */
