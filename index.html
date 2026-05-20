@@ -185,7 +185,7 @@ body{background:var(--bg);color:#ddd8cc;font-family:'Exo 2',monospace;overflow:h
 @keyframes battle-bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-6px);}}
 
 .orient-hint{display:none;font-size:5px;color:#445;text-align:center;margin-top:10px;line-height:1.8;}
-@media(orientation:portrait)and(any-pointer:coarse){.orient-hint{display:block;}}
+@media(any-pointer:coarse){.orient-hint{display:block;}}
 @media(max-width:680px),(any-pointer:coarse){
   #dpad{display:grid;}
   #ebtn{display:flex;}
