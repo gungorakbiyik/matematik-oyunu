@@ -512,7 +512,9 @@ function confirmClass(){if(!G.cls)return;initMap();show('s-map');scaleGame();}
 
 /* ─── SCALE ─── */
 function scaleGame(){
-  const scale=Math.min(window.innerWidth/620,window.innerHeight/502);
+  const w=window.innerWidth,h=window.innerHeight;
+  const portrait=w<h&&w<600;
+  const scale=Math.min(w/(portrait?500:620),h/502);
   document.getElementById('dng').style.zoom=scale;
   const uiZoom=scale>1?scale:'';
   const mb=document.querySelector('.menu-box');if(mb)mb.style.zoom=uiZoom;
